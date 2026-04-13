@@ -67,6 +67,8 @@ build/
 
 # OS / editor noise
 .DS_Store
+
+# Editor-local configuration
 .cursor/
 
 # This project uses pnpm; ignore other lockfiles so installs stay consistent
