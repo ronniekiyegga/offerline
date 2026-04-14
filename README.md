@@ -13,7 +13,7 @@ License: [MIT](LICENSE).
 - **HTTP:** Helmet, JSON body parser, shared error JSON, **`GET /health`**
 - **Rate limits:** optional Arcjet token-bucket (tighter on `/api/v1/auth`, looser on other `/api/v1/*`); no key or `VITEST=true` → middleware skips
 - **Users API:** `GET /api/v1/users/me` and self-only `GET /api/v1/users/:id` with Bearer JWT; list-all users → **403**
-- **Subscriptions:** routes scaffolded only
+- **Subscriptions:** `/api/v1/subscriptions/*` requires Bearer JWT; owner-scoped list/create/read/update/cancel/delete plus `GET …/upcoming-renewals` (active, `renewalDate` in the future)
 
 ## Roadmap
 

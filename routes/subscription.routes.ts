@@ -1,37 +1,35 @@
-import { Router, type Request, type Response } from "express";
+import { Router } from "express";
+
+import {
+  deleteSubscription,
+  getSubscription,
+  getSubscriptions,
+  getUpcomingRenewals,
+  getUserSubscriptions,
+  postSubscription,
+  putSubscription,
+  putSubscriptionCancel,
+} from "../controllers/subscription.controller.js";
+import { requireAuth } from "../middleware/auth.middleware.js";
 
 const subscriptionRouter = Router();
 
-subscriptionRouter.get("/", (_req: Request, res: Response) =>
-  res.send({ title: "GET all subscriptions" }),
-);
+subscriptionRouter.use(requireAuth);
 
-subscriptionRouter.get("/upcoming-renewals", (_req: Request, res: Response) =>
-  res.send({ title: "GET upcoming subscription renewals" }),
-);
+subscriptionRouter.get("/", getSubscriptions);
 
-subscriptionRouter.get("/user/:id", (req: Request, res: Response) =>
-  res.send({ title: "GET all user subscriptions", userId: req.params.id }),
-);
+subscriptionRouter.get("/upcoming-renewals", getUpcomingRenewals);
 
-subscriptionRouter.post("/", (_req: Request, res: Response) =>
-  res.send({ title: "CREATE a subscription" }),
-);
+subscriptionRouter.get("/user/:id", getUserSubscriptions);
 
-subscriptionRouter.put("/:id/cancel", (req: Request, res: Response) =>
-  res.send({ title: "CANCEL a subscription", id: req.params.id }),
-);
+subscriptionRouter.post("/", postSubscription);
 
-subscriptionRouter.get("/:id", (req: Request, res: Response) =>
-  res.send({ title: "GET subscription details", id: req.params.id }),
-);
+subscriptionRouter.put("/:id/cancel", putSubscriptionCancel);
 
-subscriptionRouter.put("/:id", (req: Request, res: Response) =>
-  res.send({ title: "UPDATE a subscription", id: req.params.id }),
-);
+subscriptionRouter.get("/:id", getSubscription);
 
-subscriptionRouter.delete("/:id", (req: Request, res: Response) =>
-  res.send({ title: "DELETE a subscription", id: req.params.id }),
-);
+subscriptionRouter.put("/:id", putSubscription);
+
+subscriptionRouter.delete("/:id", deleteSubscription);
 
 export default subscriptionRouter;

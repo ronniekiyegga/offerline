@@ -113,3 +113,21 @@ export const subscriptionCreateSchema = subscriptionCreateBase
   }));
 
 export type SubscriptionCreateInput = z.output<typeof subscriptionCreateSchema>;
+
+export const subscriptionIdParamSchema = z.coerce.number().int().positive();
+
+export const subscriptionUpdateSchema = z
+  .object({
+    name: z.string().trim().min(1).max(200).optional(),
+    price: z.number().int().nonnegative().optional(),
+    currency: zCurrency.optional(),
+    frequency: zBillingFrequency.optional(),
+    category: zSubscriptionCategory.optional(),
+    status: zSubscriptionStatus.optional(),
+    startDate: z.coerce.date().optional(),
+    renewalDate: z.coerce.date().optional(),
+  })
+  .strict()
+  .refine((v) => Object.keys(v).length > 0, {
+    message: "Provide at least one field to update.",
+  });
