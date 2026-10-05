@@ -74,7 +74,7 @@ export async function createUser(
   body: unknown,
 ): Promise<{ user: PublicUser }> {
   const input = userCreateSchema.parse(body);
-  const passwordHash = bcrypt.hashSync(input.password, BCRYPT_COST);
+  const passwordHash = await bcrypt.hash(input.password, BCRYPT_COST);
 
   try {
     const user = await prisma.user.create({
@@ -97,7 +97,6 @@ export async function createUser(
         isEmail
           ? "A user with this email already exists."
           : "This record conflicts with an existing unique constraint.",
-        e.meta,
       );
     }
     throw e;

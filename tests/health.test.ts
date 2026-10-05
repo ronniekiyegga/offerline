@@ -7,5 +7,19 @@ describe("GET /health", () => {
     const res = await request(createApp()).get("/health");
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true });
+    expect(res.headers["x-powered-by"]).toBeUndefined();
+  });
+
+  it("returns structured errors for malformed JSON", async () => {
+    const res = await request(createApp())
+      .post("/api/v1/auth/sign-in")
+      .set("Content-Type", "application/json")
+      .send('{"email":');
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toEqual({
+      code: "INVALID_JSON",
+      message: "Request body contains invalid JSON.",
+    });
   });
 });

@@ -109,7 +109,7 @@ describe("POST /api/v1/auth", () => {
         .send({
           name: "Bob Example",
           email: "bob@example.com",
-          password: "secret12",
+          password: "correct-horse-battery-staple",
         });
 
       expect(res.status).toBe(201);
@@ -138,7 +138,7 @@ describe("POST /api/v1/auth", () => {
         .send({
           name: "Bob",
           email: "dup@example.com",
-          password: "secret12",
+          password: "correct-horse-battery-staple",
         });
 
       expect(res.status).toBe(409);
@@ -147,15 +147,14 @@ describe("POST /api/v1/auth", () => {
   });
 
   describe("sign-out", () => {
-    it("returns 200 with signedOut true", async () => {
+    it("returns 404 because stateless JWT sign-out is client-side", async () => {
       const res = await request(createApp()).post("/api/v1/auth/sign-out");
 
-      expect(res.status).toBe(200);
-      expect(res.body.data).toEqual({ signedOut: true });
+      expect(res.status).toBe(404);
+      expect(res.body.error?.code).toBe("NOT_FOUND");
     });
   });
 });
-
 
 
 

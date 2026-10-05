@@ -1,26 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
-import {
-  createUser,
-  findUserById,
-  userIdParamSchema,
-} from "../services/user.service.js";
+import { findUserById, userIdParamSchema } from "../services/user.service.js";
 import { AppError } from "../lib/httpErrors.js";
-
-export const getUsers = (
-  _req: Request,
-  _res: Response,
-  next: NextFunction,
-): void => {
-  try {
-    throw new AppError(
-      403,
-      "FORBIDDEN",
-      "Listing all users is not enabled (would require elevated access in production).",
-    );
-  } catch (e) {
-    next(e);
-  }
-};
 
 export const getMe = async (
   req: Request,
@@ -62,19 +42,6 @@ export const getUser = async (
     }
     const { user } = await findUserById(rawId);
     res.status(200).json({ data: user });
-  } catch (e) {
-    next(e);
-  }
-};
-
-export const postUser = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
-  try {
-    const { user } = await createUser(req.body);
-    res.status(201).json({ data: user });
   } catch (e) {
     next(e);
   }

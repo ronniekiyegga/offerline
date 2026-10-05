@@ -17,11 +17,11 @@ describe("GET /api/v1/users", () => {
     vi.restoreAllMocks();
   });
 
-  it("returns 403 for GET / (bulk listing disabled)", async () => {
+  it("returns 404 for GET / because bulk listing is not exposed", async () => {
     const res = await request(createApp()).get("/api/v1/users");
 
-    expect(res.status).toBe(403);
-    expect(res.body.error?.code).toBe("FORBIDDEN");
+    expect(res.status).toBe(404);
+    expect(res.body.error?.code).toBe("NOT_FOUND");
   });
 
   it("returns 200 for GET /me with valid Bearer token", async () => {
@@ -116,4 +116,17 @@ describe("GET /api/v1/users", () => {
     expect(res.status).toBe(400);
     expect(res.body.error?.code).toBe("VALIDATION_ERROR");
   });
+
+  it.each(["put", "delete"] as const)(
+    "returns 404 for unimplemented %s mutations",
+    async (method) => {
+      const res = await request(createApp())[method]("/api/v1/users/1");
+
+      expect(res.status).toBe(404);
+      expect(res.body.error).toEqual({
+        code: "NOT_FOUND",
+        message: "Route not found.",
+      });
+    },
+  );
 });

@@ -2,14 +2,13 @@ import { type Request, type Response, type NextFunction } from "express";
 import { AppError } from "../lib/httpErrors.js";
 import {
   cancelSubscriptionForOwner,
-  createSubscription,
+  subscribe,
   deleteSubscriptionForOwner,
   getSubscriptionForOwner,
   listSubscriptionsForOwner,
-  listSubscriptionsForUserParam,
   listUpcomingRenewals,
   updateSubscription,
-} from "../services/subscription.service.js";
+} from "../services/billing.service.js";
 
 function requireAuthUserId(req: Request): number {
   const id = req.authUserId;
@@ -23,15 +22,15 @@ function requireAuthUserId(req: Request): number {
   return id;
 }
 
-export const getSubscriptions = async (
+export const getBillingList = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
   try {
     const ownerId = requireAuthUserId(req);
-    const { subscriptions } = await listSubscriptionsForOwner(ownerId);
-    res.status(200).json({ data: subscriptions });
+    const { records } = await listSubscriptionsForOwner(ownerId);
+    res.status(200).json({ data: records });
   } catch (e) {
     next(e);
   }
@@ -44,100 +43,77 @@ export const getUpcomingRenewals = async (
 ): Promise<void> => {
   try {
     const ownerId = requireAuthUserId(req);
-    const { subscriptions } = await listUpcomingRenewals(ownerId);
-    res.status(200).json({ data: subscriptions });
+    const { records } = await listUpcomingRenewals(ownerId);
+    res.status(200).json({ data: records });
   } catch (e) {
     next(e);
   }
 };
 
-export const getUserSubscriptions = async (
+export const postSubscribe = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
   try {
     const ownerId = requireAuthUserId(req);
-    const rawUserId = Array.isArray(req.params.id)
-      ? req.params.id[0]
-      : req.params.id;
-    const { subscriptions } = await listSubscriptionsForUserParam(
-      rawUserId,
-      ownerId,
-    );
-    res.status(200).json({ data: subscriptions });
+    const { record } = await subscribe(req.body, ownerId);
+    res.status(201).json({ data: record });
   } catch (e) {
     next(e);
   }
 };
 
-export const postSubscription = async (
+export const getBillingById = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
   try {
     const ownerId = requireAuthUserId(req);
-    const { subscription } = await createSubscription(req.body, ownerId);
-    res.status(201).json({ data: subscription });
+    const { record } = await getSubscriptionForOwner(req.params.id, ownerId);
+    res.status(200).json({ data: record });
   } catch (e) {
     next(e);
   }
 };
 
-export const getSubscription = async (
+export const putBillingById = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
   try {
     const ownerId = requireAuthUserId(req);
-    const { subscription } = await getSubscriptionForOwner(
-      req.params.id,
-      ownerId,
-    );
-    res.status(200).json({ data: subscription });
-  } catch (e) {
-    next(e);
-  }
-};
-
-export const putSubscription = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
-  try {
-    const ownerId = requireAuthUserId(req);
-    const { subscription } = await updateSubscription(
+    const { record } = await updateSubscription(
       req.params.id,
       req.body,
       ownerId,
     );
-    res.status(200).json({ data: subscription });
+    res.status(200).json({ data: record });
   } catch (e) {
     next(e);
   }
 };
 
-export const putSubscriptionCancel = async (
+export const putBillingCancel = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
   try {
     const ownerId = requireAuthUserId(req);
-    const { subscription } = await cancelSubscriptionForOwner(
+    const { record } = await cancelSubscriptionForOwner(
       req.params.id,
       ownerId,
     );
-    res.status(200).json({ data: subscription });
+    res.status(200).json({ data: record });
   } catch (e) {
     next(e);
   }
 };
 
-export const deleteSubscription = async (
+export const deleteBilling = async (
   req: Request,
   res: Response,
   next: NextFunction,

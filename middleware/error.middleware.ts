@@ -30,6 +30,22 @@ export const errorMiddleware: ErrorRequestHandler = (
     return;
   }
 
+  if (err instanceof Error && "status" in err) {
+    const status = (err as Error & { status?: unknown }).status;
+    if (status === 400 || status === 413) {
+      res.status(status).json({
+        error: {
+          code: status === 413 ? "PAYLOAD_TOO_LARGE" : "INVALID_JSON",
+          message:
+            status === 413
+              ? "Request body exceeds the 100kb limit."
+              : "Request body contains invalid JSON.",
+        },
+      });
+      return;
+    }
+  }
+
   if (err instanceof AppError) {
     res.status(err.statusCode).json({
       error: {

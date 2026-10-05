@@ -29,15 +29,3 @@ export const signUp = async (
     next(e);
   }
 };
-
-export const signOut = async (
-  _req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
-  try {
-    res.status(200).json({ data: { signedOut: true } });
-  } catch (e) {
-    next(e);
-  }
-};

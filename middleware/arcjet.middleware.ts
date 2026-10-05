@@ -1,6 +1,8 @@
 import type { RequestHandler } from "express";
 import arcjet, { tokenBucket } from "@arcjet/node";
 import { env } from "../config/env.js";
+import { AppError } from "../lib/httpErrors.js";
+import { logRequestError } from "../lib/logRequestError.js";
 
 const skipArcjet = (): boolean =>
   process.env.VITEST === "true" || !env.ARCJET_KEY;
@@ -66,8 +68,15 @@ export const arcjetAuthLimiter: RequestHandler = async (req, res, next) => {
       return;
     }
     next();
-  } catch {
-    next();
+  } catch (error) {
+    logRequestError(error);
+    next(
+      new AppError(
+        503,
+        "RATE_LIMIT_UNAVAILABLE",
+        "Authentication is temporarily unavailable. Try again shortly.",
+      ),
+    );
   }
 };
 
@@ -83,7 +92,8 @@ export const arcjetApiLimiter: RequestHandler = async (req, res, next) => {
       return;
     }
     next();
-  } catch {
+  } catch (error) {
+    logRequestError(error);
     next();
   }
 };

@@ -10,8 +10,6 @@ datasource db {
   provider = "postgresql"
 }
 
-// --- Enums (DB-level allowed values; messages + date rules → Zod in models/subscription.models.ts) ---
-
 enum Currency {
   USD
   EUR
@@ -36,7 +34,7 @@ enum SubscriptionCategory {
   OTHERS
 }
 
-/// Your sketch called this `paymentMethod` but listed lifecycle values — modeled as `status`.
+/// Generic lifecycle for a user’s plan assignment.
 enum SubscriptionStatus {
   ACTIVE
   CANCELLED
@@ -54,24 +52,38 @@ model User {
   subscriptions Subscription[]
 }
 
+/// Catalog of billable plans (reusable reference data).
+model Plan {
+  id         Int                 @id @default(autoincrement())
+  name       String              @db.VarChar(200)
+  price      Int
+  currency   Currency            @default(GBP)
+  frequency  BillingFrequency
+  /// Preserves the optional classification used by legacy subscription records.
+  category   SubscriptionCategory?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  assignments Subscription[]
+}
+
+/// User’s subscription to a plan (renamed in API as “billing” / subscribe flow).
 model Subscription {
-  id          Int                    @id @default(autoincrement())
-  name        String                 @db.VarChar(200)
-  /// Amount in the smallest currency unit (e.g. pence for GBP); enforce ranges in Zod if needed.
-  price       Int
-  currency    Currency               @default(GBP)
-  frequency   BillingFrequency
-  category    SubscriptionCategory
-  status      SubscriptionStatus     @default(ACTIVE)
-  startDate   DateTime
-  renewalDate DateTime
+  id            Int                 @id @default(autoincrement())
+  planId        Int
+  plan          Plan                @relation(fields: [planId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  /// Opaque key/value usage signals for demos (e.g. { "apiCalls": 1200, "seats": 3 }).
+  usageMetrics  Json                @default("{}")
+  status        SubscriptionStatus  @default(ACTIVE)
+  startDate     DateTime
+  renewalDate   DateTime
 
   userId Int
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([userId, status])
+  @@index([planId])
 }
