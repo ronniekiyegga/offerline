@@ -1,12 +1,12 @@
 # Subscription API
 
 A TypeScript and Express backend foundation for authentication, user-scoped
-access, and subscription-oriented data. Built with Prisma and Neon Postgres.
+access and subscription-oriented data. Built with Prisma and Neon Postgres.
 
 The focus is predictable behaviour at the application boundary: clear
-separation between HTTP handling, business logic, and persistence, with
-validation, authentication, authorization, and rate limiting applied before
-protected operations execute.
+separation between HTTP handling, business logic and persistence, with
+validation, authentication and rate limiting applied before protected
+operations execute.
 
 > **Project direction:** This repository is being evolved publicly into
 > Offerline, a private candidate-workflow platform. The current API is the
@@ -20,10 +20,9 @@ protected operations execute.
 This API uses a layered structure rather than placing business logic directly
 inside route handlers:
 
-- Routes compose endpoints and middleware.
-- Controllers translate HTTP requests and responses.
-- Middleware handles authentication, errors, and rate limiting.
-- Services enforce business rules, ownership boundaries, and persistence.
+- Routes and controllers handle HTTP concerns.
+- Middleware handles authentication, validation, errors and rate limiting.
+- Services contain business logic and persistence access.
 - Zod schemas validate incoming request data.
 - Prisma manages the PostgreSQL data model and migrations.
 
@@ -34,23 +33,17 @@ avoid coupling the rest of the application directly to the ORM.
 
 ## Current capabilities
 
-- User creation through sign-up, with strict request validation, asynchronous
-  password hashing, and duplicate-email conflict handling.
-- JWT-based sign-up and sign-in with issuer, audience, algorithm, and expiry
-  validation.
+- User creation with request validation, password hashing and duplicate-email
+  conflict handling.
+- JWT-based sign-up and sign-in.
 - Bearer-token authentication for protected endpoints.
-- Self-only access to current-user and user-profile routes.
-- Owner-scoped billing creation, reads, updates, cancellation, and deletion.
-- Calendar-aware subscription renewal dates and effective expiry status.
-- Arcjet token-bucket protection for authentication and API routes.
-- Prisma migrations and Neon Postgres persistence.
-- Structured client and server errors, security headers, and request-size
-  limits.
+- User-scoped access to current-user and self-only profile routes.
+- Arcjet token-bucket protection for authentication routes where configured.
+- Prisma migrations and PostgreSQL persistence.
 - Health check endpoint.
 
-Billing records currently model plan assignments and usage metrics. They are
-not connected to an external payment provider, webhook flow, or entitlement
-system.
+Subscription and billing routes are present as a scaffold but are not yet
+connected to an external payment provider or a complete billing workflow.
 
 ---
 
@@ -59,11 +52,11 @@ system.
 ```text
 HTTP request
   ↓
-Route and middleware composition
+Route / controller
   ↓
-Controller: HTTP translation
+Middleware: validation, authentication, rate limiting, error handling
   ↓
-Service: validation, ownership, domain rules, and persistence
+Service: domain logic and persistence operations
   ↓
 Prisma
   ↓
@@ -73,14 +66,14 @@ PostgreSQL / Neon
 ```text
 routes/       Route definitions and middleware composition
 controllers/  HTTP request and response handling
-middleware/   Authentication, errors, and rate limiting
-services/     Business rules, ownership checks, and Prisma access
-models/       Zod schemas and domain helpers
+middleware/   Authentication, validation, errors and rate limiting
+services/     Business logic and Prisma access
+models/       Zod schemas and small domain helpers
 prisma/       Database schema and migrations
 ```
 
-Prisma access remains behind the service layer so that HTTP handlers are not
-tightly coupled to persistence details.
+Prisma access remains behind the service layer so that HTTP handlers and
+domain logic are not tightly coupled to persistence details.
 
 ---
 
@@ -89,6 +82,7 @@ tightly coupled to persistence details.
 ### Authentication and users
 
 ```text
+POST /api/v1/users
 POST /api/v1/auth/sign-up
 POST /api/v1/auth/sign-in
 
@@ -100,69 +94,56 @@ GET  /health
 
 `GET /api/v1/users/me` and `GET /api/v1/users/:id` require a Bearer token.
 The `:id` route is self-only: an authenticated user cannot retrieve another
-user's record through that endpoint.
+user’s record through that endpoint.
 
-### Billing baseline
+### Subscription baseline
 
-```text
-GET    /api/v1/billing
-GET    /api/v1/billing/renewals
-POST   /api/v1/billing/subscribe
-GET    /api/v1/billing/:id
-PUT    /api/v1/billing/:id
-DELETE /api/v1/billing/:id
-PUT    /api/v1/billing/:id/cancel
-```
+Subscription routes exist as an implementation scaffold. They are not
+presented as a completed payment or billing integration.
 
-Every billing route requires authentication. Reads and mutations are
-constrained by both record ID and authenticated owner where applicable, so a
-valid token alone is not sufficient to access another user's billing data.
-
-This is a subscription-management baseline, not a completed payment-provider
-integration.
+The next domain milestone will define candidate-owned application workflows,
+subscription entitlements, verified external events and the testable
+invariants required to keep those operations correct.
 
 ---
 
 ## Key decisions and trade-offs
 
-### Typed validation at the service boundary
+### Typed validation at the edge
 
-Zod schemas parse untrusted request data before business and persistence logic
-executes. Strict write schemas reject unexpected fields rather than silently
-discarding them.
+Zod schemas validate incoming requests before they enter services. This keeps
+malformed input from reaching business and persistence logic.
 
 ### JWT authentication and ownership checks
 
-The API uses stateless JWT authentication and server-enforced self-only access.
-Billing services include the authenticated owner in their database queries,
-including mutation constraints. JWTs simplify the service boundary, but
-refresh tokens and server-side revocation are not implemented yet.
+The current API uses stateless JWT authentication and middleware-enforced
+self-only access for protected user routes. JWTs simplify the service boundary,
+but refresh tokens and server-side revocation are not implemented yet.
 
 ### Arcjet rate limiting
 
-Arcjet provides token-bucket limits for authentication and general API routes.
-It is optional in development, skipped in tests, and required at production
-startup. Authentication fails closed if the configured limiter is unavailable;
-general API traffic fails open and logs the limiter error.
+Authentication routes use Arcjet token-bucket limits when configured. This is
+a fast way to protect a security-sensitive boundary, but it introduces an
+external dependency and does not provide a self-managed coordination layer.
 
 A Redis-backed limiter is deliberately deferred. It becomes appropriate only
-when deployed requirements demonstrate a need for self-managed distributed
-coordination, caching, or queue behaviour.
+when the deployed system needs distributed coordination, caching or queue
+behaviour that the current approach cannot safely provide.
 
 ### Synchronous workflows today
 
-The service does not use a queue or background worker. That keeps the baseline
-simple, but it is not sufficient for durable payment processing, webhooks,
-notifications, or reconciliation.
+The current service does not use a queue or background worker. That keeps the
+baseline simple, but it is not sufficient for durable payment processing,
+webhooks, notifications or reconciliation.
 
-Those capabilities require persisted event state, idempotency handling, and
-explicit retry and recovery behaviour before a workflow engine such as
+Those capabilities will require persisted event state, idempotency handling
+and explicit retry/recovery behaviour before a workflow engine such as
 Temporal should be considered.
 
 ### Prisma over raw SQL
 
 Prisma provides typed data access and migration tooling. It improves delivery
-speed and schema consistency while adding an abstraction layer that must be
+speed and schema consistency, while adding an abstraction layer that must be
 understood when investigating query behaviour or performance.
 
 ---
@@ -202,13 +183,10 @@ Deliberately deferred until a real requirement justifies them:
 ## Data layer
 
 - Prisma 7 with Neon Postgres and the serverless driver.
-- `DATABASE_URL` configures the pooled runtime connection.
-- `DIRECT_URL` configures migrations and falls back to `DATABASE_URL` when
-  omitted.
+- `DATABASE_URL` configures the runtime database connection.
+- `DIRECT_URL` is used for migrations when configured.
 
-Migrations run separately from normal application startup. The application
-runtime deliberately rejects localhost database URLs because it uses the Neon
-serverless adapter.
+Migrations run separately from normal application startup.
 
 ---
 
@@ -218,18 +196,18 @@ serverless adapter.
 
 - Node.js 20 or newer
 - pnpm 10.12.1
-- A Neon Postgres database
+- A PostgreSQL-compatible database
 
-Configure the variables described in [`.env.example`](./.env.example):
+Copy `.env.example` to your local environment configuration and provide:
 
 ```text
-DATABASE_URL=  # pooled Neon connection
-DIRECT_URL=    # direct Neon connection for migrations
-JWT_SECRET=    # random value of at least 32 characters
-ARCJET_KEY=    # required in production, optional in development
+DATABASE_URL=
+DIRECT_URL=
+JWT_SECRET=
+ARCJET_KEY=
 ```
 
-Do not commit real credentials.
+`JWT_SECRET` should be at least 32 characters. Do not commit real credentials.
 
 ### Start the API
 
@@ -246,14 +224,12 @@ pnpm dev
 pnpm run typecheck
 pnpm run lint
 pnpm test
-pnpm audit --prod
 ```
 
 ---
 
 ## Security
 
-See [`SECURITY.md`](./SECURITY.md) for vulnerability-reporting guidance.
+See [SECURITY.md](./SECURITY.md) for vulnerability-reporting guidance.
 
-Environment files and generated clients are excluded from version control. No
-real user, payment, or production data is included in this repository.
+No real user, payment or production data is included in this repository.
