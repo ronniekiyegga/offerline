@@ -10,33 +10,40 @@ jobs:
   check:
     runs-on: ubuntu-latest
     env:
-      # Repository Variables and/or Secrets (Settings → Secrets and variables → Actions).
-      # Prefer Secrets for URLs that include credentials; Variables are fine for public pooler URLs.
-      DATABASE_URL: ${{ secrets.DATABASE_URL || vars.DATABASE_URL }}
-      DIRECT_URL: ${{ secrets.DIRECT_URL || vars.DIRECT_URL || secrets.DATABASE_URL || vars.DATABASE_URL }}
+      DATABASE_URL: postgresql://offerline:offerline@127.0.0.1:5432/offerline?sslmode=disable
+      DIRECT_URL: postgresql://offerline:offerline@127.0.0.1:5432/offerline?sslmode=disable
+      OFFERLINE_API_BASE_URL: http://127.0.0.1:9
     steps:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
         with:
-          # Must match `packageManager` in package.json (pnpm/action-setup rejects conflicting versions).
           version: 10.12.1
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version-file: ".nvmrc"
           cache: "pnpm"
 
-      - run: pnpm install
+      - run: pnpm install --frozen-lockfile
 
       - name: Prisma validate
-        run: pnpm exec prisma validate
+        run: pnpm run prisma:validate
 
       - name: Prisma generate
-        run: pnpm exec prisma generate
+        run: pnpm run prisma:generate
 
       - run: pnpm run typecheck
 
       - run: pnpm run lint
 
       - run: pnpm test
+
+      - name: Build API application
+        run: pnpm run build:api
+
+      - name: Build web application
+        run: pnpm run build:web
+
+      - name: Production dependency audit
+        run: pnpm audit --prod

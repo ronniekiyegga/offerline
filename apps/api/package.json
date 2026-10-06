@@ -1,0 +1,50 @@
+{
+  "name": "@offerline/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.21.0 <23"
+  },
+  "scripts": {
+    "clean": "node --input-type=module -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true })\"",
+    "build": "pnpm exec prisma generate && pnpm run clean && tsc -p tsconfig.build.json",
+    "start": "node dist/src/start.js",
+    "dev": "cross-env NODE_ENV=development tsx watch src/index.ts",
+    "lint": "eslint .",
+    "typecheck": "pnpm exec prisma generate && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@arcjet/node": "^1.14.0",
+    "@neondatabase/serverless": "^1.2.0",
+    "@prisma/adapter-neon": "^7.10.0",
+    "@prisma/client": "^7.10.0",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^16.5.0",
+    "express": "^5.2.1",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "ws": "^8.22.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.15.3",
+    "@types/supertest": "^7.2.0",
+    "@types/ws": "^8.18.1",
+    "cross-env": "^7.0.3",
+    "eslint": "^10.2.0",
+    "globals": "^17.5.0",
+    "jiti": "^2.6.1",
+    "prisma": "^7.10.0",
+    "supertest": "^7.1.0",
+    "tsx": "^4.19.3",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.58.1",
+    "vitest": "^3.1.1"
+  }
+}
