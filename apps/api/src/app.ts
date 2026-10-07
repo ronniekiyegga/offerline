@@ -23,7 +23,7 @@ export function createApp() {
   });
 
   app.get("/", (_req: Request, res: Response) => {
-    res.type("text").send("subscription-api — billing & auth reference");
+    res.type("text").send("Offerline API");
   });
 
   app.use("/api/v1/auth", arcjetAuthLimiter, authRouter);

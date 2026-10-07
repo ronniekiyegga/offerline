@@ -9,7 +9,7 @@ async function main(): Promise<void> {
   await connectDatabase();
   const server = app.listen(env.PORT, () => {
     console.log(
-      `subscription-api (billing reference) on http://localhost:${String(env.PORT)} (${env.NODE_ENV})`,
+      `Offerline API listening on http://localhost:${String(env.PORT)} (${env.NODE_ENV})`,
     );
   });
 

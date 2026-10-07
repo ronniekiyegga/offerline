@@ -17,7 +17,7 @@ export default function SiteFooter() {
           <nav aria-label="Footer navigation">
             <ul className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
               {footerLinks.map((link) => <li key={link.href}><Link className="transition-colors hover:text-foreground" href={link.href}>{link.label}</Link></li>)}
-              <li><Link className="transition-colors hover:text-foreground" href="https://github.com/ronniekiyegga/subscription-api">GitHub</Link></li>
+              <li><Link className="transition-colors hover:text-foreground" href="https://github.com/ronniekiyegga/offerline">GitHub</Link></li>
             </ul>
           </nav>
         </div>

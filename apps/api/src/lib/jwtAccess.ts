@@ -2,8 +2,8 @@ import jwt, { type JwtPayload, type SignOptions } from "jsonwebtoken";
 import { env } from "../config/env.js";
 import { AppError } from "./httpErrors.js";
 
-const JWT_ISSUER = "subscription-api";
-const JWT_AUDIENCE = "subscription-api-client";
+const JWT_ISSUER = "offerline-api";
+const JWT_AUDIENCE = "offerline-web";
 
 export function issueAccessToken(userId: number): string {
   if (!env.JWT_SECRET) {
